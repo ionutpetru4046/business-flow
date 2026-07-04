@@ -49,6 +49,21 @@ type Vehicle = {
   created_at: string;
 };
 
+type Task = {
+  id: string;
+  title: string;
+  completed: boolean;
+};
+
+type ServiceRecord = {
+  id: string;
+  vehicle_id: string;
+  service_name: string;
+  service_date: string;
+  cost: number | null;
+  notes: string | null;
+};
+
 const APPOINTMENT_STATUSES = [
   "Scheduled",
   "In Progress",
@@ -81,9 +96,7 @@ export default function CustomerDetailsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentTitle, setAppointmentTitle] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
-  const [editingAppointmentId, setEditingAppointmentId] = useState<
-    string | null
-  >(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleMake, setVehicleMake] = useState("");
@@ -91,8 +104,46 @@ export default function CustomerDetailsPage() {
   const [vehicleYear, setVehicleYear] = useState("");
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [vehicleVin, setVehicleVin] = useState("");
-  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(
-    null
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskTitle, setTaskTitle] = useState("");
+
+  const [services, setServices] = useState<ServiceRecord[]>([]);
+  const [serviceName, setServiceName] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
+  const [serviceCost, setServiceCost] = useState("");
+  const [serviceNotes, setServiceNotes] = useState("");
+
+  // Service history fetching by customer vehicles
+  const loadServiceHistory = useCallback(
+    async (vehicleIds: string[]) => {
+      if (vehicleIds.length === 0) {
+        setServices([]);
+        return;
+      }
+  
+      const { data, error } = await supabase
+        .from("service_history")
+        .select("*")
+        .in("vehicle_id", vehicleIds)
+        .order("service_date", {
+          ascending: false,
+        });
+  
+      if (error) {
+        console.error(
+          "[loadServiceHistory] Error:",
+          error
+        );
+  
+        setServices([]);
+        return;
+      }
+  
+      setServices(data ?? []);
+    },
+    []
   );
 
   const loadCustomer = useCallback(async () => {
@@ -143,6 +194,7 @@ export default function CustomerDetailsPage() {
     setAppointments(data ?? []);
   }, [id]);
 
+  // Load vehicles, and also trigger service history loading for those vehicles
   const loadVehicles = useCallback(async () => {
     const { data, error } = await supabase
       .from("vehicles")
@@ -153,11 +205,37 @@ export default function CustomerDetailsPage() {
     if (error) {
       console.error(error);
       setVehicles([]);
+      setServices([]);
       return;
     }
 
     setVehicles(data ?? []);
-  }, [id]);
+    
+    // Fetch service history for these vehicles
+    if (data && data.length > 0) {
+      const vIds = data.map((v: Vehicle) => v.id);
+      await loadServiceHistory(vIds);
+    } else {
+      setServices([]);
+    }
+  }, [id, loadServiceHistory]);
+
+  const loadTasks = async () => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("customer_id", id)
+      .order("created_at", {
+        ascending: false,
+      });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setTasks(data ?? []);
+  };
 
   const resetAppointmentForm = useCallback(() => {
     setEditingAppointmentId(null);
@@ -235,7 +313,7 @@ export default function CustomerDetailsPage() {
       }
       await loadAppointments();
     },
-    [loadAppointments]
+    [loadAppointments],
   );
 
   const handleAppointmentStatusChange = useCallback(
@@ -251,7 +329,7 @@ export default function CustomerDetailsPage() {
       }
       await loadAppointments();
     },
-    [loadAppointments]
+    [loadAppointments],
   );
 
   const resetVehicleForm = useCallback(() => {
@@ -285,9 +363,9 @@ export default function CustomerDetailsPage() {
         return;
       }
     } else {
-      const { error } = await supabase.from("vehicles").insert([
-        { customer_id: id, ...payload },
-      ]);
+      const { error } = await supabase
+        .from("vehicles")
+        .insert([{ customer_id: id, ...payload }]);
 
       if (error) {
         alert(error.message);
@@ -309,15 +387,18 @@ export default function CustomerDetailsPage() {
     resetVehicleForm,
   ]);
 
-  const handleEditVehicle = useCallback((vehicle: Vehicle) => {
-    resetAppointmentForm();
-    setEditingVehicleId(vehicle.id);
-    setVehicleMake(vehicle.make);
-    setVehicleModel(vehicle.model);
-    setVehicleYear(vehicle.year ? String(vehicle.year) : "");
-    setVehiclePlate(vehicle.license_plate ?? "");
-    setVehicleVin(vehicle.vin ?? "");
-  }, [resetAppointmentForm]);
+  const handleEditVehicle = useCallback(
+    (vehicle: Vehicle) => {
+      resetAppointmentForm();
+      setEditingVehicleId(vehicle.id);
+      setVehicleMake(vehicle.make);
+      setVehicleModel(vehicle.model);
+      setVehicleYear(vehicle.year ? String(vehicle.year) : "");
+      setVehiclePlate(vehicle.license_plate ?? "");
+      setVehicleVin(vehicle.vin ?? "");
+    },
+    [resetAppointmentForm],
+  );
 
   const handleDeleteVehicle = useCallback(
     async (vehicleId: string) => {
@@ -335,7 +416,7 @@ export default function CustomerDetailsPage() {
       }
       await loadVehicles();
     },
-    [loadVehicles]
+    [loadVehicles],
   );
 
   const handleAddNote = useCallback(async () => {
@@ -357,12 +438,62 @@ export default function CustomerDetailsPage() {
     await loadNotes();
   }, [id, note, loadNotes]);
 
+  const createTask = async () => {
+    if (!taskTitle.trim()) return;
+
+    const { error } = await supabase.from("tasks").insert([
+      {
+        customer_id: id,
+        title: taskTitle,
+      },
+    ]);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setTaskTitle("");
+
+    await loadTasks();
+  };
+
+  const toggleTask = async (taskId: string, completed: boolean) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        completed: !completed,
+      })
+      .eq("id", taskId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await loadTasks();
+  };
+
+  const deleteTask = async (taskId: string) => {
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await loadTasks();
+  };
+
+  // Note: add services to dependencies so loadServiceHistory is always current
   useEffect(() => {
     if (id) {
       loadCustomer();
       loadNotes();
       loadAppointments();
       loadVehicles();
+      loadTasks();
+      // Don't call loadServiceHistory directly here! Only call it when vehicles are loaded (done in loadVehicles)
     }
   }, [id, loadCustomer, loadNotes, loadAppointments, loadVehicles]);
 
@@ -387,6 +518,17 @@ export default function CustomerDetailsPage() {
       </main>
     );
   }
+
+  // Service history grouping by vehicle (for display)
+  const servicesByVehicle: { [vehicleId: string]: ServiceRecord[] } = {};
+  vehicles.forEach((v) => {
+    servicesByVehicle[v.id] = [];
+  });
+  services.forEach((service) => {
+    if (servicesByVehicle[service.vehicle_id]) {
+      servicesByVehicle[service.vehicle_id].push(service);
+    }
+  });
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-12">
@@ -482,6 +624,43 @@ export default function CustomerDetailsPage() {
               ))
             )}
           </div>
+        </section>
+
+        {/* Tasks Section */}
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold mb-4">Tasks</h2>
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="New Task"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              className="border p-2 rounded flex-1"
+            />
+            <button onClick={createTask} className="border px-4 py-2 rounded">
+              Add
+            </button>
+          </div>
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="border p-3 rounded mb-2 flex justify-between"
+            >
+              <div>
+                <p
+                  className={task.completed ? "line-through text-gray-500" : ""}
+                >
+                  {task.title}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => toggleTask(task.id, task.completed)}>
+                  {task.completed ? "Undo" : "Done"}
+                </button>
+                <button onClick={() => deleteTask(task.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Appointments Section */}
@@ -732,6 +911,76 @@ export default function CustomerDetailsPage() {
               ))
             )}
           </div>
+        </section>
+
+        {/* Service History Section */}
+        <section className="mt-12">
+          <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+            <HiOutlineDocumentText className="text-xl" />
+            Service History
+          </h2>
+
+          {vehicles.length === 0 ? (
+            <div className="text-center text-sm text-gray-400 py-6">
+              No vehicles registered yet.
+            </div>
+          ) : (
+            vehicles.map((vehicle) => (
+              <div key={vehicle.id} className="mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-semibold text-indigo-800">
+                    {vehicle.make} {vehicle.model}
+                  </span>
+                  {vehicle.year && (
+                    <span className="text-xs text-gray-500">({vehicle.year})</span>
+                  )}
+                  {vehicle.license_plate && (
+                    <span className="text-xs text-gray-500">
+                      Plate: {vehicle.license_plate}
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-x-auto bg-indigo-50 rounded-xl">
+                  <table className="min-w-full divide-y divide-indigo-200">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Service</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Cost</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {servicesByVehicle[vehicle.id] && servicesByVehicle[vehicle.id].length > 0 ? (
+                        servicesByVehicle[vehicle.id].map((service) => (
+                          <tr key={service.id} className="bg-white border-b border-indigo-100">
+                            <td className="px-4 py-2">{service.service_name}</td>
+                            <td className="px-4 py-2">{new Date(service.service_date).toLocaleDateString()}</td>
+                            <td className="px-4 py-2">
+                              {service.cost != null ? (
+                                <span>
+                                  {service.cost.toLocaleString(undefined, { style: "currency", currency: "USD" })}
+                                </span>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td className="px-4 py-2">{service.notes || "-"}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-3 text-center text-gray-400">
+                            No service history for this vehicle yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          )}
         </section>
       </div>
     </main>
