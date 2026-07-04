@@ -37,7 +37,7 @@ export default function Navbar() {
                   href={link.href}
                   className="relative px-4 py-2 rounded-full font-medium text-gray-700/90 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow transition-all duration-150 group"
                 >
-                  <span className="group-hover:underline group-hover:decoration-blue-500">{link.label}</span>
+                  <span className="group-hover:decoration-blue-500">{link.label}</span>
                 </Link>
               </li>
             ))}
