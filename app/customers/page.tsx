@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { HiOutlineUser, HiOutlinePhone, HiOutlineBuildingOffice2, HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlusCircle, HiOutlineXCircle } from "react-icons/hi2";
+import {
+  HiOutlineUser,
+  HiOutlinePhone,
+  HiOutlineBuildingOffice2,
+  HiOutlinePencilSquare,
+  HiOutlineTrash,
+  HiOutlinePlusCircle,
+  HiOutlineXCircle,
+} from "react-icons/hi2";
 
 type Customer = {
   id: string;
@@ -182,8 +190,7 @@ export default function CustomersPage() {
               />
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300">
-              </span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300"></span>
               <input
                 type="email"
                 placeholder="Email"
@@ -249,7 +256,9 @@ export default function CustomersPage() {
           </div>
         </form>
         <section>
-          <h2 className="text-2xl font-bold text-indigo-700 mb-6">Customer List</h2>
+          <h2 className="text-2xl font-bold text-indigo-700 mb-6">
+            Customer List
+          </h2>
           {customers.length === 0 ? (
             <div className="text-gray-500 text-center bg-slate-50 px-8 py-12 rounded-xl select-none font-medium">
               No customers found.
@@ -270,15 +279,32 @@ export default function CustomersPage() {
                   </Link>
                   <div className="mt-2 space-y-1 text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
-                      <span>{customer.email || <span className="italic text-gray-300">No email</span>}</span>
+                      <span>
+                        {customer.email || (
+                          <span className="italic text-gray-300">No email</span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                       <HiOutlinePhone size={18} className="text-indigo-200" />
-                      <span>{customer.phone || <span className="italic text-gray-300">No phone</span>}</span>
+                      <span>
+                        {customer.phone || (
+                          <span className="italic text-gray-300">No phone</span>
+                        )}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                      <HiOutlineBuildingOffice2 size={18} className="text-indigo-200" />
-                      <span>{customer.company || <span className="italic text-gray-300">No company</span>}</span>
+                      <HiOutlineBuildingOffice2
+                        size={18}
+                        className="text-indigo-200"
+                      />
+                      <span>
+                        {customer.company || (
+                          <span className="italic text-gray-300">
+                            No company
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-6 justify-end">
