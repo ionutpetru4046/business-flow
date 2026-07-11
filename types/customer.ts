@@ -51,6 +51,9 @@ export type Customer = {
   };
 
   export type JobCard = {
+    summary: string;
+    date: string;
+    vehicle: string;
     id: string;
     customer_id: string;
     vehicle_id: string;
