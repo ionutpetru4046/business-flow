@@ -6,16 +6,17 @@ import { Note } from "@/types/customer";
 
 import { HiOutlineDocumentText, HiOutlinePaperAirplane } from "react-icons/hi2";
 
-// Define the prop type inline, since Props is not declared elsewhere
-type NotesSectionProps = { customerId: string };
+type NotesSectionProps = {
+  customerId: string;
+};
 
 export default function NotesSection({ customerId }: NotesSectionProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [note, setNote] = useState("");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
 
   const loadNotes = useCallback(async () => {
-    setErrorMsg(null);
+
     const { data, error } = await supabase
       .from("notes")
       .select("*")
@@ -25,24 +26,23 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
       });
 
     if (error) {
-      setErrorMsg(error.message ?? "Failed to load notes.");
+      console.error(error);
       return;
     }
 
     setNotes(data ?? []);
-  });
+  }, [customerId]);
 
-  // Use useEffect correctly: no cascading renders as loadNotes does setState but is already async
+
   useEffect(() => {
-    // Immediately Invoked Function Expression for async in useEffect
-    (async () => {
-      await loadNotes();
-    })();
-    // Should reload notes if customerId changes
-  }, [customerId, loadNotes]);
+    // Call loadNotes only if customerId is available
+    if (customerId) {
+      loadNotes();
+    }
+  }, [loadNotes, customerId]);
 
   const handleAddNote = async () => {
-    setErrorMsg(null);
+
     if (!note.trim()) return;
 
     const { error } = await supabase.from("notes").insert([
@@ -53,7 +53,7 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
     ]);
 
     if (error) {
-      setErrorMsg(error.message ?? "Failed to add note.");
+      alert(error.message);
       return;
     }
 
@@ -82,14 +82,12 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
           <button
             onClick={handleAddNote}
             className="bg-indigo-600 text-white px-4 py-3 rounded-lg"
-            aria-label="Add Note"
+            type="button"
           >
             <HiOutlinePaperAirplane />
           </button>
         </div>
-        {errorMsg && (
-          <div className="text-sm text-red-600 mt-2">{errorMsg}</div>
-        )}
+        
       </div>
 
       <div className="space-y-4">
@@ -99,7 +97,7 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
           notes.map((note) => (
             <div key={note.id} className="bg-white border rounded-xl p-4">
               <p>{note.content}</p>
-              
+
               <p className="text-xs text-gray-400 mt-2">
                 {new Date(note.created_at).toLocaleString()}
               </p>
