@@ -24,6 +24,7 @@ import AppointmentsSection from "@/components/customer/AppointmentsSection";
 import VehiclesSection from "@/components/customer/VehiclesSection";
 import ServiceHistorySection from "@/components/customer/ServiceHistorySection";
 import JobCardsSection from "@/components/customer/JobCardsSection";
+import { Customer } from "@/types/customer";
 
 
 type Appointment = {
