@@ -90,8 +90,6 @@ export default function CustomerDetailsPage() {
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [note, setNote] = useState("");
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentTitle, setAppointmentTitle] = useState("");
@@ -161,21 +159,6 @@ export default function CustomerDetailsPage() {
 
     setCustomer(data);
     setLoading(false);
-  }, [id]);
-
-  const loadNotes = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("notes")
-      .select("*")
-      .eq("customer_id", id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setNotes(data ?? []);
   }, [id]);
 
   const loadAppointments = useCallback(async () => {
@@ -419,25 +402,6 @@ export default function CustomerDetailsPage() {
     [loadVehicles],
   );
 
-  const handleAddNote = useCallback(async () => {
-    if (!note.trim()) return;
-
-    const { error } = await supabase.from("notes").insert([
-      {
-        customer_id: id,
-        content: note,
-      },
-    ]);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setNote("");
-    await loadNotes();
-  }, [id, note, loadNotes]);
-
   const createTask = async () => {
     if (!taskTitle.trim()) return;
 
@@ -488,14 +452,12 @@ export default function CustomerDetailsPage() {
   // Note: add services to dependencies so loadServiceHistory is always current
   useEffect(() => {
     if (id) {
-      loadCustomer();
-      loadNotes();
-      loadAppointments();
+      loadCustomer();      loadAppointments();
       loadVehicles();
       loadTasks();
       // Don't call loadServiceHistory directly here! Only call it when vehicles are loaded (done in loadVehicles)
     }
-  }, [id, loadCustomer, loadNotes, loadAppointments, loadVehicles]);
+  }, [id, loadCustomer, loadAppointments, loadVehicles]);
 
   if (loading) {
     return (
@@ -533,59 +495,10 @@ export default function CustomerDetailsPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-12">
       <div className="bg-white shadow-2xl rounded-3xl px-10 py-10 max-w-2xl w-full">
+
       <CustomerInfo customer={customer} />
 
-        {/* Notes Section */}
-        <section>
-          <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
-            <HiOutlineDocumentText className="text-xl" />
-            Notes
-          </h2>
-
-          <div className="bg-indigo-50 rounded-xl p-5 mb-6">
-            <div className="flex items-center gap-3 mb-2">
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Write a note for this customer..."
-                className="w-full border border-indigo-200 focus:border-indigo-400 ring-0 py-3 px-4 rounded-lg shadow-sm transition resize-none text-base bg-white focus:bg-indigo-50"
-                rows={3}
-              />
-              <button
-                onClick={handleAddNote}
-                className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 transition text-white font-semibold py-3 px-3 rounded-lg shadow flex items-center gap-2 disabled:bg-indigo-300 disabled:cursor-not-allowed"
-                disabled={!note.trim()}
-                title="Add Note"
-              >
-                <HiOutlinePaperAirplane className="w-5 h-5" />
-                <span className="hidden sm:inline">Add</span>
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 pl-1">
-              Keep track of important conversations and reminders here.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {notes.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-6">
-                No notes added yet.
-              </div>
-            ) : (
-              notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="bg-white border border-indigo-100 rounded-xl p-4 shadow flex flex-col"
-                >
-                  <p className="text-indigo-900">{note.content}</p>
-                  <p className="text-xs text-gray-400 mt-3">
-                    {new Date(note.created_at).toLocaleString()}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+      <NotesSection customerId={id} />
 
         {/* Tasks Section */}
         <section className="mt-10">
