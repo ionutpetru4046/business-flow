@@ -26,7 +26,6 @@ import ServiceHistorySection from "@/components/customer/ServiceHistorySection";
 import JobCardsSection from "@/components/customer/JobCardsSection";
 import { Customer } from "@/types/customer";
 
-
 type Appointment = {
   id: string;
   title: string;
@@ -42,12 +41,6 @@ type Vehicle = {
   license_plate: string | null;
   vin: string | null;
   created_at: string;
-};
-
-type Task = {
-  id: string;
-  title: string;
-  completed: boolean;
 };
 
 type ServiceRecord = {
@@ -98,9 +91,6 @@ export default function CustomerDetailsPage() {
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [vehicleVin, setVehicleVin] = useState("");
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
-
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [taskTitle, setTaskTitle] = useState("");
 
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [serviceName, setServiceName] = useState("");
@@ -197,23 +187,6 @@ export default function CustomerDetailsPage() {
       setServices([]);
     }
   }, [id, loadServiceHistory]);
-
-  const loadTasks = async () => {
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("customer_id", id)
-      .order("created_at", {
-        ascending: false,
-      });
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setTasks(data ?? []);
-  };
 
   const resetAppointmentForm = useCallback(() => {
     setEditingAppointmentId(null);
@@ -397,59 +370,12 @@ export default function CustomerDetailsPage() {
     [loadVehicles],
   );
 
-  const createTask = async () => {
-    if (!taskTitle.trim()) return;
-
-    const { error } = await supabase.from("tasks").insert([
-      {
-        customer_id: id,
-        title: taskTitle,
-      },
-    ]);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setTaskTitle("");
-
-    await loadTasks();
-  };
-
-  const toggleTask = async (taskId: string, completed: boolean) => {
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        completed: !completed,
-      })
-      .eq("id", taskId);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadTasks();
-  };
-
-  const deleteTask = async (taskId: string) => {
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadTasks();
-  };
-
   // Note: add services to dependencies so loadServiceHistory is always current
   useEffect(() => {
     if (id) {
-      loadCustomer();      loadAppointments();
+      loadCustomer();
+      loadAppointments();
       loadVehicles();
-      loadTasks();
       // Don't call loadServiceHistory directly here! Only call it when vehicles are loaded (done in loadVehicles)
     }
   }, [id, loadCustomer, loadAppointments, loadVehicles]);
@@ -495,362 +421,328 @@ export default function CustomerDetailsPage() {
 
       <NotesSection customerId={id} />
 
-        {/* Tasks Section */}
-        <section className="mt-10">
-          <h2 className="text-2xl font-bold mb-4">Tasks</h2>
-          <div className="flex gap-2 mb-4">
+      {/* Tasks Section */}
+      <TasksSection customerId={id} />
+
+      {/* Appointments Section */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+          <HiOutlineCalendar className="text-xl" />
+          Appointments
+        </h2>
+
+        <div className="bg-indigo-50 rounded-xl p-5 mb-6">
+          <div className="grid gap-3 mb-3">
             <input
               type="text"
-              placeholder="New Task"
-              value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
-              className="border p-2 rounded flex-1"
+              placeholder="Appointment title"
+              value={appointmentTitle}
+              onChange={(e) => setAppointmentTitle(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
             />
-            <button onClick={createTask} className="border px-4 py-2 rounded">
-              Add
-            </button>
+            <input
+              type="datetime-local"
+              value={appointmentDate}
+              onChange={(e) => setAppointmentDate(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+            />
           </div>
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="border p-3 rounded mb-2 flex justify-between"
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleSaveAppointment}
+              disabled={!appointmentTitle || !appointmentDate}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition"
             >
-              <div>
-                <p
-                  className={task.completed ? "line-through text-gray-500" : ""}
-                >
-                  {task.title}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => toggleTask(task.id, task.completed)}>
-                  {task.completed ? "Undo" : "Done"}
-                </button>
-                <button onClick={() => deleteTask(task.id)}>Delete</button>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        {/* Appointments Section */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
-            <HiOutlineCalendar className="text-xl" />
-            Appointments
-          </h2>
-
-          <div className="bg-indigo-50 rounded-xl p-5 mb-6">
-            <div className="grid gap-3 mb-3">
-              <input
-                type="text"
-                placeholder="Appointment title"
-                value={appointmentTitle}
-                onChange={(e) => setAppointmentTitle(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-              <input
-                type="datetime-local"
-                value={appointmentDate}
-                onChange={(e) => setAppointmentDate(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleSaveAppointment}
-                disabled={!appointmentTitle || !appointmentDate}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition"
-              >
-                {editingAppointmentId ? (
-                  <>
-                    <HiOutlinePencilSquare className="w-5 h-5" />
-                    Update Appointment
-                  </>
-                ) : (
-                  <>
-                    <HiOutlinePlusCircle className="w-5 h-5" />
-                    Add Appointment
-                  </>
-                )}
-              </button>
-              {editingAppointmentId && (
-                <button
-                  onClick={resetAppointmentForm}
-                  className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-200 transition"
-                >
-                  <HiOutlineXCircle className="w-5 h-5" />
-                  Cancel
-                </button>
+              {editingAppointmentId ? (
+                <>
+                  <HiOutlinePencilSquare className="w-5 h-5" />
+                  Update Appointment
+                </>
+              ) : (
+                <>
+                  <HiOutlinePlusCircle className="w-5 h-5" />
+                  Add Appointment
+                </>
               )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {appointments.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-6">
-                No appointments yet.
-              </div>
-            ) : (
-              appointments.map((app) => (
-                <div
-                  key={app.id}
-                  className={`bg-white border rounded-xl p-4 shadow ${
-                    editingAppointmentId === app.id
-                      ? "border-indigo-400 ring-2 ring-indigo-100"
-                      : "border-indigo-100"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-indigo-900">
-                        {app.title}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {new Date(app.appointment_date).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleEditAppointment(app)}
-                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition"
-                        title="Edit appointment"
-                      >
-                        <HiOutlinePencilSquare className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAppointment(app.id)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition"
-                        title="Delete appointment"
-                      >
-                        <HiOutlineTrash className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <label
-                      htmlFor={`status-${app.id}`}
-                      className="text-xs text-gray-500"
-                    >
-                      Status:
-                    </label>
-                    <select
-                      id={`status-${app.id}`}
-                      value={app.status}
-                      onChange={(e) =>
-                        handleAppointmentStatusChange(app.id, e.target.value)
-                      }
-                      className={`px-3 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${STATUS_COLORS[app.status] ?? STATUS_COLORS.Scheduled}`}
-                    >
-                      {APPOINTMENT_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ))
+            </button>
+            {editingAppointmentId && (
+              <button
+                onClick={resetAppointmentForm}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-200 transition"
+              >
+                <HiOutlineXCircle className="w-5 h-5" />
+                Cancel
+              </button>
             )}
           </div>
-        </section>
+        </div>
 
-        {/* Vehicles Section */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
-            <HiOutlineTruck className="text-xl" />
-            Vehicles
-          </h2>
-
-          <div className="bg-indigo-50 rounded-xl p-5 mb-6">
-            <div className="grid gap-3 md:grid-cols-2 mb-3">
-              <input
-                type="text"
-                placeholder="Make (e.g. Toyota)"
-                value={vehicleMake}
-                onChange={(e) => setVehicleMake(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-              <input
-                type="text"
-                placeholder="Model (e.g. Camry)"
-                value={vehicleModel}
-                onChange={(e) => setVehicleModel(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-              <input
-                type="number"
-                placeholder="Year"
-                value={vehicleYear}
-                onChange={(e) => setVehicleYear(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-              <input
-                type="text"
-                placeholder="License plate"
-                value={vehiclePlate}
-                onChange={(e) => setVehiclePlate(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
-              />
-              <input
-                type="text"
-                placeholder="VIN (optional)"
-                value={vehicleVin}
-                onChange={(e) => setVehicleVin(e.target.value)}
-                className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition md:col-span-2"
-              />
+        <div className="space-y-3">
+          {appointments.length === 0 ? (
+            <div className="text-center text-sm text-gray-400 py-6">
+              No appointments yet.
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleSaveVehicle}
-                disabled={!vehicleMake.trim() || !vehicleModel.trim()}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+          ) : (
+            appointments.map((app) => (
+              <div
+                key={app.id}
+                className={`bg-white border rounded-xl p-4 shadow ${
+                  editingAppointmentId === app.id
+                    ? "border-indigo-400 ring-2 ring-indigo-100"
+                    : "border-indigo-100"
+                }`}
               >
-                {editingVehicleId ? (
-                  <>
-                    <HiOutlinePencilSquare className="w-5 h-5" />
-                    Update Vehicle
-                  </>
-                ) : (
-                  <>
-                    <HiOutlinePlusCircle className="w-5 h-5" />
-                    Add Vehicle
-                  </>
-                )}
-              </button>
-              {editingVehicleId && (
-                <button
-                  onClick={resetVehicleForm}
-                  className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-200 transition"
-                >
-                  <HiOutlineXCircle className="w-5 h-5" />
-                  Cancel
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {vehicles.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-6">
-                No vehicles registered yet.
-              </div>
-            ) : (
-              vehicles.map((vehicle) => (
-                <div
-                  key={vehicle.id}
-                  className={`bg-white border rounded-xl p-4 shadow flex items-start justify-between ${
-                    editingVehicleId === vehicle.id
-                      ? "border-indigo-400 ring-2 ring-indigo-100"
-                      : "border-indigo-100"
-                  }`}
-                >
+                <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-semibold text-indigo-900">
-                      {vehicle.make} {vehicle.model}
-                      {vehicle.year ? ` (${vehicle.year})` : ""}
+                      {app.title}
                     </p>
-                    <div className="mt-1 space-y-0.5 text-sm text-gray-500">
-                      {vehicle.license_plate && (
-                        <p>Plate: {vehicle.license_plate}</p>
-                      )}
-                      {vehicle.vin && <p>VIN: {vehicle.vin}</p>}
-                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(app.appointment_date).toLocaleString()}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleEditVehicle(vehicle)}
+                      onClick={() => handleEditAppointment(app)}
                       className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition"
-                      title="Edit vehicle"
+                      title="Edit appointment"
                     >
                       <HiOutlinePencilSquare className="w-4 h-4" />
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteVehicle(vehicle.id)}
+                      onClick={() => handleDeleteAppointment(app.id)}
                       className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition"
-                      title="Delete vehicle"
+                      title="Delete appointment"
                     >
                       <HiOutlineTrash className="w-4 h-4" />
                       Delete
                     </button>
                   </div>
                 </div>
-              ))
+                <div className="flex items-center gap-2 mt-2">
+                  <label
+                    htmlFor={`status-${app.id}`}
+                    className="text-xs text-gray-500"
+                  >
+                    Status:
+                  </label>
+                  <select
+                    id={`status-${app.id}`}
+                    value={app.status}
+                    onChange={(e) =>
+                      handleAppointmentStatusChange(app.id, e.target.value)
+                    }
+                    className={`px-3 py-1 rounded-lg border text-xs font-semibold cursor-pointer ${STATUS_COLORS[app.status] ?? STATUS_COLORS.Scheduled}`}
+                  >
+                    {APPOINTMENT_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Vehicles Section */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+          <HiOutlineTruck className="text-xl" />
+          Vehicles
+        </h2>
+
+        <div className="bg-indigo-50 rounded-xl p-5 mb-6">
+          <div className="grid gap-3 md:grid-cols-2 mb-3">
+            <input
+              type="text"
+              placeholder="Make (e.g. Toyota)"
+              value={vehicleMake}
+              onChange={(e) => setVehicleMake(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+            />
+            <input
+              type="text"
+              placeholder="Model (e.g. Camry)"
+              value={vehicleModel}
+              onChange={(e) => setVehicleModel(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+            />
+            <input
+              type="number"
+              placeholder="Year"
+              value={vehicleYear}
+              onChange={(e) => setVehicleYear(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+            />
+            <input
+              type="text"
+              placeholder="License plate"
+              value={vehiclePlate}
+              onChange={(e) => setVehiclePlate(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+            />
+            <input
+              type="text"
+              placeholder="VIN (optional)"
+              value={vehicleVin}
+              onChange={(e) => setVehicleVin(e.target.value)}
+              className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition md:col-span-2"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleSaveVehicle}
+              disabled={!vehicleMake.trim() || !vehicleModel.trim()}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+            >
+              {editingVehicleId ? (
+                <>
+                  <HiOutlinePencilSquare className="w-5 h-5" />
+                  Update Vehicle
+                </>
+              ) : (
+                <>
+                  <HiOutlinePlusCircle className="w-5 h-5" />
+                  Add Vehicle
+                </>
+              )}
+            </button>
+            {editingVehicleId && (
+              <button
+                onClick={resetVehicleForm}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-200 transition"
+              >
+                <HiOutlineXCircle className="w-5 h-5" />
+                Cancel
+              </button>
             )}
           </div>
-        </section>
+        </div>
 
-        {/* Service History Section */}
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
-            <HiOutlineDocumentText className="text-xl" />
-            Service History
-          </h2>
-
+        <div className="space-y-3">
           {vehicles.length === 0 ? (
             <div className="text-center text-sm text-gray-400 py-6">
               No vehicles registered yet.
             </div>
           ) : (
             vehicles.map((vehicle) => (
-              <div key={vehicle.id} className="mb-8">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold text-indigo-800">
+              <div
+                key={vehicle.id}
+                className={`bg-white border rounded-xl p-4 shadow flex items-start justify-between ${
+                  editingVehicleId === vehicle.id
+                    ? "border-indigo-400 ring-2 ring-indigo-100"
+                    : "border-indigo-100"
+                }`}
+              >
+                <div>
+                  <p className="font-semibold text-indigo-900">
                     {vehicle.make} {vehicle.model}
-                  </span>
-                  {vehicle.year && (
-                    <span className="text-xs text-gray-500">({vehicle.year})</span>
-                  )}
-                  {vehicle.license_plate && (
-                    <span className="text-xs text-gray-500">
-                      Plate: {vehicle.license_plate}
-                    </span>
-                  )}
+                    {vehicle.year ? ` (${vehicle.year})` : ""}
+                  </p>
+                  <div className="mt-1 space-y-0.5 text-sm text-gray-500">
+                    {vehicle.license_plate && (
+                      <p>Plate: {vehicle.license_plate}</p>
+                    )}
+                    {vehicle.vin && <p>VIN: {vehicle.vin}</p>}
+                  </div>
                 </div>
-                <div className="overflow-x-auto bg-indigo-50 rounded-xl">
-                  <table className="min-w-full divide-y divide-indigo-200">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Service</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Date</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Cost</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {servicesByVehicle[vehicle.id] && servicesByVehicle[vehicle.id].length > 0 ? (
-                        servicesByVehicle[vehicle.id].map((service) => (
-                          <tr key={service.id} className="bg-white border-b border-indigo-100">
-                            <td className="px-4 py-2">{service.service_name}</td>
-                            <td className="px-4 py-2">{new Date(service.service_date).toLocaleDateString()}</td>
-                            <td className="px-4 py-2">
-                              {service.cost != null ? (
-                                <span>
-                                  {service.cost.toLocaleString(undefined, { style: "currency", currency: "USD" })}
-                                </span>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="px-4 py-2">{service.notes || "-"}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-3 text-center text-gray-400">
-                            No service history for this vehicle yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleEditVehicle(vehicle)}
+                    className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition"
+                    title="Edit vehicle"
+                  >
+                    <HiOutlinePencilSquare className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteVehicle(vehicle.id)}
+                    className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                    title="Delete vehicle"
+                  >
+                    <HiOutlineTrash className="w-4 h-4" />
+                    Delete
+                  </button>
                 </div>
               </div>
             ))
           )}
-        </section>
+        </div>
+      </section>
+
+      {/* Service History Section */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center gap-2">
+          <HiOutlineDocumentText className="text-xl" />
+          Service History
+        </h2>
+
+        {vehicles.length === 0 ? (
+          <div className="text-center text-sm text-gray-400 py-6">
+            No vehicles registered yet.
+          </div>
+        ) : (
+          vehicles.map((vehicle) => (
+            <div key={vehicle.id} className="mb-8">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-semibold text-indigo-800">
+                  {vehicle.make} {vehicle.model}
+                </span>
+                {vehicle.year && (
+                  <span className="text-xs text-gray-500">({vehicle.year})</span>
+                )}
+                {vehicle.license_plate && (
+                  <span className="text-xs text-gray-500">
+                    Plate: {vehicle.license_plate}
+                  </span>
+                )}
+              </div>
+              <div className="overflow-x-auto bg-indigo-50 rounded-xl">
+                <table className="min-w-full divide-y divide-indigo-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Service</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Date</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Cost</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {servicesByVehicle[vehicle.id] && servicesByVehicle[vehicle.id].length > 0 ? (
+                      servicesByVehicle[vehicle.id].map((service) => (
+                        <tr key={service.id} className="bg-white border-b border-indigo-100">
+                          <td className="px-4 py-2">{service.service_name}</td>
+                          <td className="px-4 py-2">{new Date(service.service_date).toLocaleDateString()}</td>
+                          <td className="px-4 py-2">
+                            {service.cost != null ? (
+                              <span>
+                                {service.cost.toLocaleString(undefined, { style: "currency", currency: "USD" })}
+                              </span>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="px-4 py-2">{service.notes || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-3 text-center text-gray-400">
+                          No service history for this vehicle yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
+      </section>
       </div>
     </main>
   );
