@@ -13,6 +13,14 @@ import {
   HiOutlineClock,
 } from "react-icons/hi";
 
+/*
+MODERN, BEAUTIFUL DESIGN LANGUAGE
+- Vibrant gradients, subtle glassmorphism, frosted backgrounds
+- Soft drop shadows, smooth hover states, animated button/element feedback
+- Clean, ample spacing and rounded corners
+- Consistent modern fonts, color palette, lighter UI
+*/
+
 type DashboardStats = {
   totalCustomers: number;
   totalAppointments: number;
@@ -31,10 +39,10 @@ type UpcomingAppointment = {
 const STATUS_LABELS = ["Scheduled", "In Progress", "Completed", "Cancelled"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
-  Scheduled: "bg-blue-100 text-blue-700",
-  "In Progress": "bg-amber-100 text-amber-700",
-  Completed: "bg-green-100 text-green-700",
-  Cancelled: "bg-gray-100 text-gray-600",
+  Scheduled: "bg-blue-200/80 text-blue-700",
+  "In Progress": "bg-amber-100/90 text-amber-700",
+  Completed: "bg-green-200/80 text-green-700",
+  Cancelled: "bg-neutral-200/70 text-gray-600",
 };
 
 export default function DashboardPage() {
@@ -46,9 +54,7 @@ export default function DashboardPage() {
     totalVehicles: 0,
     appointmentsByStatus: {},
   });
-  const [upcomingAppointments, setUpcomingAppointments] = useState<
-    UpcomingAppointment[]
-  >([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<UpcomingAppointment[]>([]);
 
   const router = useRouter();
 
@@ -115,100 +121,97 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 via-white to-indigo-50">
-        <div className="bg-white shadow-lg rounded-xl px-10 py-10 w-full max-w-md flex flex-col items-center">
-          <p className="text-lg text-gray-600">Loading Dashboard...</p>
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-100 via-white to-purple-100">
+        <div className="bg-white/60 backdrop-blur-xl shadow-2xl rounded-2xl px-12 py-12 max-w-md flex flex-col items-center">
+          <div className="animate-pulse w-12 h-12 rounded-full border-4 border-indigo-300 mb-6" />
+          <p className="text-lg text-gray-600 font-medium">Loading Dashboard...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-indigo-50 flex flex-col">
-      <nav className="p-6 flex items-center justify-between bg-white shadow-md rounded-b-2xl">
-        <div className="flex items-center gap-3">
-          <span className="text-indigo-600 bg-indigo-100 rounded-full p-2">
-            <HiOutlineUser size={28} />
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-100 via-white via-30% to-purple-200 font-sans">
+      <nav className="sticky top-0 z-20 p-7 flex items-center justify-between bg-white/70 backdrop-blur-xl shadow-lg rounded-b-3xl mx-auto w-full max-w-6xl">
+        <div className="flex items-center gap-4">
+          <span className="text-indigo-700 bg-gradient-to-br from-indigo-200 via-indigo-100 to-emerald-100 shadow-inner rounded-full p-3 border-2 border-indigo-200/60">
+            <HiOutlineUser size={32} />
           </span>
           <div>
-            <p className="font-medium text-indigo-900">Welcome</p>
-            <span className="text-sm text-gray-500">{userEmail}</span>
+            <p className="font-semibold text-indigo-900 text-lg">Welcome,</p>
+            <span className="text-base text-gray-500">{userEmail}</span>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 cursor-pointer bg-red-50 text-red-600 px-4 py-2 rounded-lg shadow transition hover:bg-red-100"
+          className="flex items-center gap-2 cursor-pointer bg-gradient-to-r from-rose-100 to-red-200 text-red-700 px-6 py-2 rounded-xl shadow transition hover:scale-105 hover:bg-rose-200 duration-200 font-semibold outline-none border border-red-100"
         >
-          <HiOutlineLogout size={20} />
-          <span className="font-semibold text-sm">Logout</span>
+          <HiOutlineLogout size={22} />
+          <span>Logout</span>
         </button>
       </nav>
 
-      <section className="flex-1 px-4 py-10 max-w-5xl mx-auto w-full">
-        <div className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold text-indigo-900 mb-2 tracking-tight">
+      <section className="flex-1 px-4 sm:px-8 py-12 max-w-6xl mx-auto w-full">
+        <div className="mb-12 text-center">
+          <h1 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 via-indigo-400 to-blue-400 mb-4 tracking-tight drop-shadow-lg">
             CRM Dashboard
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-xl text-gray-500 font-medium">
             Real-time overview of your business
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white rounded-2xl shadow-lg p-6 flex items-center gap-4">
-            <div className="bg-indigo-100 rounded-xl p-3">
-              <HiOutlineUserGroup className="text-2xl text-indigo-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 flex flex-col items-center gap-4 border-t-4 border-indigo-400/30 hover:scale-[1.03] transition-all duration-200 hover:shadow-2xl">
+            <div className="bg-gradient-to-br from-indigo-400 via-indigo-300 to-indigo-100 rounded-2xl p-4 shadow">
+              <HiOutlineUserGroup className="text-3xl text-indigo-800" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Customers</p>
-              <p className="text-3xl font-extrabold text-indigo-900">
-                {stats.totalCustomers}
-              </p>
+            <div className="text-center">
+              <p className="text-base font-medium text-indigo-500 mb-1">Total Customers</p>
+              <p className="text-4xl font-extrabold text-indigo-900 drop-shadow">{stats.totalCustomers}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 flex items-center gap-4">
-            <div className="bg-blue-100 rounded-xl p-3">
-              <HiOutlineCalendar className="text-2xl text-blue-600" />
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 flex flex-col items-center gap-4 border-t-4 border-blue-400/30 hover:scale-[1.03] transition-all duration-200 hover:shadow-2xl">
+            <div className="bg-gradient-to-br from-blue-400 via-blue-200 to-blue-50 rounded-2xl p-4 shadow">
+              <HiOutlineCalendar className="text-3xl text-blue-700" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Appointments</p>
-              <p className="text-3xl font-extrabold text-indigo-900">
-                {stats.totalAppointments}
-              </p>
+            <div className="text-center">
+              <p className="text-base font-medium text-blue-500 mb-1">Total Appointments</p>
+              <p className="text-4xl font-extrabold text-indigo-900 drop-shadow">{stats.totalAppointments}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 flex items-center gap-4">
-            <div className="bg-emerald-100 rounded-xl p-3">
-              <HiOutlineTruck className="text-2xl text-emerald-600" />
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 flex flex-col items-center gap-4 border-t-4 border-green-400/30 hover:scale-[1.03] transition-all duration-200 hover:shadow-2xl">
+            <div className="bg-gradient-to-br from-green-300 via-emerald-200 to-emerald-50 rounded-2xl p-4 shadow">
+              <HiOutlineTruck className="text-3xl text-emerald-700" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Vehicles</p>
-              <p className="text-3xl font-extrabold text-indigo-900">
-                {stats.totalVehicles}
-              </p>
+            <div className="text-center">
+              <p className="text-base font-medium text-emerald-500 mb-1">Total Vehicles</p>
+              <p className="text-4xl font-extrabold text-indigo-900 drop-shadow">{stats.totalVehicles}</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-indigo-900 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
+          {/* Appointments by Status Card */}
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 border border-indigo-100/40 hover:shadow-2xl transition duration-200">
+            <h2 className="text-2xl font-bold text-indigo-900 mb-6 tracking-tight flex items-center gap-2">
+              <HiOutlineCalendar className="text-xl text-indigo-500" />
               Appointments by Status
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {STATUS_LABELS.map((status) => (
                 <div
                   key={status}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between py-2 px-2 rounded-xl hover:bg-indigo-50/50 transition group"
                 >
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[status]}`}
+                    className={`px-4 py-1.5 rounded-full text-base font-semibold ${STATUS_COLORS[status]} shadow-sm group-hover:scale-105  transition`}
                   >
                     {status}
                   </span>
-                  <span className="text-lg font-bold text-indigo-900">
+                  <span className="text-2xl font-extrabold text-indigo-800 tracking-wide group-hover:text-indigo-600 transition">
                     {stats.appointmentsByStatus[status] ?? 0}
                   </span>
                 </div>
@@ -216,36 +219,38 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2">
+          {/* Upcoming Appointments Card */}
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 border border-blue-100/30 hover:shadow-2xl transition duration-200">
+            <h2 className="text-2xl font-bold text-indigo-900 mb-6 flex items-center gap-2 tracking-tight">
               <HiOutlineClock className="text-indigo-500" />
               Upcoming Appointments
             </h2>
             {upcomingAppointments.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">
-                No upcoming appointments.
-              </p>
+              <div className="h-36 flex flex-col justify-center items-center">
+                <p className="text-gray-400 text-base text-center">
+                  No upcoming appointments.
+                </p>
+                <div className="w-12 h-0.5 bg-indigo-100 mt-4 rounded" />
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {upcomingAppointments.map((app) => (
                   <div
                     key={app.id}
-                    className="border border-indigo-100 rounded-xl p-4"
+                    className="border border-indigo-100/60 shadow-sm bg-white/90 rounded-xl p-5 hover:scale-[1.02] hover:border-indigo-300 transition flex flex-col gap-1"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-indigo-900">
-                        {app.title}
-                      </p>
+                      <p className="font-semibold text-indigo-900 text-lg">{app.title}</p>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[app.status] ?? STATUS_COLORS.Scheduled}`}
+                        className={`px-3 py-0.5 rounded-full text-sm font-semibold ${STATUS_COLORS[app.status] ?? STATUS_COLORS.Scheduled} shadow`}
                       >
                         {app.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-base text-gray-600 font-medium">
                       {app.customers?.name ?? "Unknown customer"}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-indigo-400 mt-1 font-mono">
                       {new Date(app.appointment_date).toLocaleString()}
                     </p>
                   </div>
@@ -255,21 +260,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-8">
           <Link
             href="/customers"
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg shadow font-semibold text-lg transition"
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white px-8 py-4 rounded-2xl shadow-lg font-semibold text-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-indigo-300"
           >
-            <HiOutlineUserGroup size={22} />
+            <HiOutlineUserGroup size={24} />
             Manage Customers
           </Link>
         </div>
       </section>
 
-      <footer className="p-5 text-center text-gray-400 text-sm mt-auto">
+      <footer className="p-6 text-center text-gray-400 text-base mt-auto font-medium bg-white/60 backdrop-blur-xl w-full border-t border-indigo-100/30">
         &copy; {new Date().getFullYear()}{" "}
-        <span className="font-bold text-indigo-500">CRM Modern</span>. All
-        rights reserved.
+        <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500">
+          CRM Modern
+        </span>
+        . All rights reserved.
       </footer>
     </main>
   );
