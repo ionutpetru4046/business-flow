@@ -6,11 +6,16 @@ import { Note } from "@/types/customer";
 
 import { HiOutlineDocumentText, HiOutlinePaperAirplane } from "react-icons/hi2";
 
-export default function NotesSection({ customerId }: Props) {
+// Define the prop type inline, since Props is not declared elsewhere
+type NotesSectionProps = { customerId: string };
+
+export default function NotesSection({ customerId }: NotesSectionProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [note, setNote] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadNotes = async () => {
+    setErrorMsg(null);
     const { data, error } = await supabase
       .from("notes")
       .select("*")
@@ -20,18 +25,24 @@ export default function NotesSection({ customerId }: Props) {
       });
 
     if (error) {
-      console.error(error);
+      setErrorMsg(error.message ?? "Failed to load notes.");
       return;
     }
 
     setNotes(data ?? []);
   };
 
+  // Use useEffect correctly: no cascading renders as loadNotes does setState but is already async
   useEffect(() => {
-    loadNotes();
-  }, []);
+    // Immediately Invoked Function Expression for async in useEffect
+    (async () => {
+      await loadNotes();
+    })();
+    // Should reload notes if customerId changes
+  }, [customerId]);
 
   const handleAddNote = async () => {
+    setErrorMsg(null);
     if (!note.trim()) return;
 
     const { error } = await supabase.from("notes").insert([
@@ -42,7 +53,7 @@ export default function NotesSection({ customerId }: Props) {
     ]);
 
     if (error) {
-      alert(error.message);
+      setErrorMsg(error.message ?? "Failed to add note.");
       return;
     }
 
@@ -71,10 +82,14 @@ export default function NotesSection({ customerId }: Props) {
           <button
             onClick={handleAddNote}
             className="bg-indigo-600 text-white px-4 py-3 rounded-lg"
+            aria-label="Add Note"
           >
             <HiOutlinePaperAirplane />
           </button>
         </div>
+        {errorMsg && (
+          <div className="text-sm text-red-600 mt-2">{errorMsg}</div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -84,7 +99,7 @@ export default function NotesSection({ customerId }: Props) {
           notes.map((note) => (
             <div key={note.id} className="bg-white border rounded-xl p-4">
               <p>{note.content}</p>
-
+              
               <p className="text-xs text-gray-400 mt-2">
                 {new Date(note.created_at).toLocaleString()}
               </p>

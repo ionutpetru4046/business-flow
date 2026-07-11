@@ -26,12 +26,6 @@ import ServiceHistorySection from "@/components/customer/ServiceHistorySection";
 import JobCardsSection from "@/components/customer/JobCardsSection";
 
 
-type Note = {
-  id: string;
-  content: string;
-  created_at: string;
-};
-
 type Appointment = {
   id: string;
   title: string;
