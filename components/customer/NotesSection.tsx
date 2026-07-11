@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Note } from "@/types/customer";
 
@@ -14,7 +14,7 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
   const [note, setNote] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     setErrorMsg(null);
     const { data, error } = await supabase
       .from("notes")
@@ -30,7 +30,7 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
     }
 
     setNotes(data ?? []);
-  };
+  });
 
   // Use useEffect correctly: no cascading renders as loadNotes does setState but is already async
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function NotesSection({ customerId }: NotesSectionProps) {
       await loadNotes();
     })();
     // Should reload notes if customerId changes
-  }, [customerId]);
+  }, [customerId, loadNotes]);
 
   const handleAddNote = async () => {
     setErrorMsg(null);
