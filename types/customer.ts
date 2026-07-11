@@ -25,9 +25,11 @@ export type Customer = {
   
   export type Appointment = {
     id: string;
+    customer_id: string;
     title: string;
     appointment_date: string;
     status: string;
+    created_at: string;
   };
   
   export type Task = {
@@ -37,10 +39,26 @@ export type Customer = {
   };
   
   export type ServiceRecord = {
+    description: string;
+    date: string;
+    vehicle: string;
     id: string;
     vehicle_id: string;
     service_name: string;
     service_date: string;
     cost: number | null;
     notes: string | null;
+  };
+
+  export type JobCard = {
+    id: string;
+    customer_id: string;
+    vehicle_id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    labour_cost: number;
+    parts_cost: number;
+    total_cost: number;
+    created_at: string;
   };

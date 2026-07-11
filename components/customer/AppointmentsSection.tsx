@@ -20,6 +20,13 @@ type AppointmentsSectionProps = {
   customerId: string;
 };
 
+const STATUS_OPTIONS = [
+  "Scheduled",
+  "In Progress",
+  "Completed",
+  "Cancelled",
+];
+
 const STATUS_COLORS: Record<string, string> = {
   Scheduled: "bg-blue-100 text-blue-700 border-blue-200",
   "In Progress": "bg-amber-100 text-amber-700 border-amber-200",
@@ -37,6 +44,7 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentTitle, setAppointmentTitle] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
+  const [appointmentStatus, setAppointmentStatus] = useState(STATUS_OPTIONS[0]);
   const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -71,6 +79,7 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
     setEditingAppointmentId(null);
     setAppointmentTitle("");
     setAppointmentDate("");
+    setAppointmentStatus(STATUS_OPTIONS[0]);
   };
 
   const handleSaveAppointment = async () => {
@@ -82,6 +91,7 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
         .update({
           title: appointmentTitle,
           appointment_date: appointmentDate,
+          status: appointmentStatus,
         })
         .eq("id", editingAppointmentId);
 
@@ -95,6 +105,7 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
           customer_id: customerId,
           title: appointmentTitle,
           appointment_date: appointmentDate,
+          status: appointmentStatus,
         },
       ]);
 
@@ -112,6 +123,7 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
     setEditingAppointmentId(appt.id);
     setAppointmentTitle(appt.title);
     setAppointmentDate(toDatetimeLocalValue(appt.appointment_date));
+    setAppointmentStatus(appt.status || STATUS_OPTIONS[0]);
   };
 
   const handleDeleteAppointment = async (appointmentId: string) => {
@@ -131,6 +143,23 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
     if (editingAppointmentId === appointmentId) {
       resetAppointmentForm();
     }
+  };
+
+  // Add handler for status update from the list
+  const handleUpdateAppointmentStatus = async (id: string, newStatus: string) => {
+    const appt = appointments.find(a => a.id === id);
+    if (!appt || appt.status === newStatus) return;
+
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadAppointments();
   };
 
   return (
@@ -155,6 +184,15 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
             onChange={(e) => setAppointmentDate(e.target.value)}
             className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
           />
+          <select
+            value={appointmentStatus}
+            onChange={(e) => setAppointmentStatus(e.target.value)}
+            className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
+          >
+            {STATUS_OPTIONS.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
         </div>
         <div className="flex gap-2">
           <button
@@ -196,11 +234,24 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
                   <div className="text-sm text-gray-500 mb-0.5">
                     {new Date(appt.appointment_date).toLocaleString()}
                   </div>
-                  <span
-                    className={`inline-block text-xs font-semibold px-2 py-1 rounded border ${STATUS_COLORS[appt.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
-                  >
-                    {appt.status}
-                  </span>
+                  {/* Status update dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block text-xs font-semibold px-2 py-1 rounded border ${STATUS_COLORS[appt.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                    >
+                      {appt.status}
+                    </span>
+                    <select
+                      value={appt.status}
+                      onChange={(e) => handleUpdateAppointmentStatus(appt.id, e.target.value)}
+                      className="ml-2 border border-indigo-200 rounded px-2 py-1 text-xs"
+                      style={{ minWidth: 120 }}
+                    >
+                      {STATUS_OPTIONS.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
