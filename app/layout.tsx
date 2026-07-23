@@ -70,7 +70,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} h-full antialiased font-sans`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
         <Navbar />
         {children}
         <Footer />

@@ -50,7 +50,7 @@
 
   export default function Home() {
     return (
-      <main className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-100 via-white to-violet-200 py-0 px-2 sm:px-0">
+      <main className="relative flex-1 w-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-100 via-white to-violet-200 py-0 px-2 sm:px-0">
         {/* Decorative background blobs */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -left-32 w-80 h-80 bg-blue-100 rounded-full blur-3xl opacity-50 animate-pulse" />
@@ -108,7 +108,7 @@
 
           {/* Testimonial or call-to-action section */}
           <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2 text-blue-500 font-semibold">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-blue-500 font-semibold text-center px-2">
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6"><path fillRule="evenodd" d="M2.003 9.25C2.555 5.079 6.333 2 10.5 2c4.417 0 8.014 3.433 8.497 7.828.062.543-.37.972-.917.972h-3.342a.75.75 0 00-.75.75v4.25a.75.75 0 01-.75.75H11V18a1 1 0 01-2 0v-1.5H6.75a.75.75 0 01-.75-.75v-4.25a.75.75 0 00-.75-.75H2.92c-.546 0-.979-.43-.917-.972z" clipRule="evenodd" /></svg>
               <span>Rated 5/5 by over 500+ businesses</span>
             </div>
