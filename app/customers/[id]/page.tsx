@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   HiOutlineUser,
@@ -74,6 +75,12 @@ export default function CustomerDetailsPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-indigo-100 py-12">
       <div className="bg-white shadow-2xl rounded-3xl px-10 py-10 max-w-2xl w-full">
+        <Link
+          href="/dashboard"
+          className="mb-6 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          Back to Dashboard
+        </Link>
 
         <CustomerInfo customer={customer} />
 

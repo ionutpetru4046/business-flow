@@ -176,14 +176,12 @@ export default function CustomersPage() {
             </span>
             <span>Customers</span>
           </h1>
-          <div className="flex gap-2 mt-2 sm:mt-0">
-            <div className="relative group">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none opacity-0 group-hover:opacity-70 transition">
-                <HiOutlinePlusCircle size={23} />
-              </span>
-              <span className="text-sm text-indigo-400 pl-8 sm:hidden block select-none">Add below</span>
-            </div>
-          </div>
+          <Link
+            href="/dashboard"
+            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+          >
+            Back to Dashboard
+          </Link>
         </div>
 
         {/* Form */}
