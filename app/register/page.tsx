@@ -50,7 +50,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 via-white to-indigo-50">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-100 via-white to-indigo-50">
       <div className="bg-white shadow-lg rounded-xl px-10 py-10 w-full max-w-md">
         <h1 className="text-3xl font-bold text-center mb-8 text-indigo-700 tracking-tight">
           Create your account
