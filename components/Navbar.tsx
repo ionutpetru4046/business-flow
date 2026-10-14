@@ -23,10 +23,10 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/dashboard", label: "Dashboard" },
     { href: "/login", label: "Login" },
     { href: "/register", label: "Register" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/dashboard", label: "Dashboard" },
   ];
 
   return (
