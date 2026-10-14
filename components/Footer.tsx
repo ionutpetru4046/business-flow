@@ -7,6 +7,7 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/login", label: "Login" },
   { href: "/register", label: "Register" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 const quickLinks = [
