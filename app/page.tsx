@@ -99,12 +99,6 @@
 
           {/* Logo/Brand Header */}
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 rounded-full bg-gradient-to-br from-sky-500 to-indigo-400 shadow-xl flex items-center justify-center">
-              <svg className="w-14 h-14 text-white" fill="none" viewBox="0 0 60 60">
-                <rect width="60" height="60" rx="15" fill="currentColor" />
-                <text x="50%" y="60%" textAnchor="middle" fontSize="20" fill="#fff" fontWeight="900" fontFamily="Inter,sans-serif">BF</text>
-              </svg>
-            </div>
             <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-400 bg-clip-text text-transparent tracking-tight drop-shadow leading-tight text-center">
               BusinessFlow CRM
             </h1>
