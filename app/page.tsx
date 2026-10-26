@@ -1,4 +1,4 @@
-  import Link from "next/link";
+import Link from "next/link";
 
   const features = [
     {
@@ -95,7 +95,7 @@
         </div>
 
         {/* Card Section */}
-        <section className="relative z-10 bg-white/70 backdrop-blur-2xl shadow-lg border border-gray-100/40 rounded-[2.5rem] flex flex-col gap-10 items-center w-full max-w-4xl px-4 sm:px-8 md:px-16 pt-14 pb-20 my-10 sm:my-16 mx-auto transition-all duration-200">
+        <section className="relative z-10 backdrop-blur-2xl flex flex-col gap-10 items-center w-full max-w-4xl px-4 sm:px-8 md:px-16 pt-14 sm:my-16 mx-auto transition-all duration-200">
 
           {/* Logo/Brand Header */}
           <div className="flex flex-col items-center gap-3">
