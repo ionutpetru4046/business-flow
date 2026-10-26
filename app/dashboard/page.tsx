@@ -62,23 +62,38 @@ export default function DashboardPage() {
 
       setUserEmail(user.email || "");
 
-      const [
-        customersResult,
-        appointmentsResult,
-        vehiclesResult,
-        upcomingResult,
-      ] = await Promise.all([
-        supabase.from("customers").select("*", { count: "exact", head: true }),
-        supabase.from("appointments").select("status"),
-        supabase.from("vehicles").select("*", { count: "exact", head: true }),
-        supabase
-          .from("appointments")
-          .select("id, title, appointment_date, status, customers(name)")
-          .gte("appointment_date", new Date().toISOString())
-          .neq("status", "Cancelled")
-          .order("appointment_date", { ascending: true })
-          .limit(5),
-      ]);
+      
+const [
+  customersResult,
+  appointmentsResult,
+  vehiclesResult,
+  upcomingResult,
+] = await Promise.all([
+  supabase
+    .from("customers")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id),
+
+  supabase
+    .from("appointments")
+    .select("status")
+    .eq("user_id", user.id),
+
+  supabase
+    .from("vehicles")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id),
+
+  supabase
+    .from("appointments")
+    .select("id, title, appointment_date, status, customers(name)")
+    .eq("user_id", user.id)
+    .gte("appointment_date", new Date().toISOString())
+    .neq("status", "Cancelled")
+    .order("appointment_date", { ascending: true })
+    .limit(5),
+]);
+
 
       const appointmentsByStatus: Record<string, number> = {};
       for (const label of STATUS_LABELS) {
