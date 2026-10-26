@@ -20,12 +20,7 @@ type AppointmentsSectionProps = {
   customerId: string;
 };
 
-const STATUS_OPTIONS = [
-  "Scheduled",
-  "In Progress",
-  "Completed",
-  "Cancelled",
-];
+const STATUS_OPTIONS = ["Scheduled", "In Progress", "Completed", "Cancelled"];
 
 const STATUS_COLORS: Record<string, string> = {
   Scheduled: "bg-blue-100 text-blue-700 border-blue-200",
@@ -40,32 +35,53 @@ function toDatetimeLocalValue(isoString: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export default function AppointmentsSection({ customerId }: AppointmentsSectionProps) {
+export default function AppointmentsSection({
+  customerId,
+}: AppointmentsSectionProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentTitle, setAppointmentTitle] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentStatus, setAppointmentStatus] = useState(STATUS_OPTIONS[0]);
-  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    string | null
+  >(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch appointments
+  // Fetch appointments belonging to the signed-in user
   const loadAppointments = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("appointments")
-      .select("*")
-      .eq("customer_id", customerId)
-      .order("appointment_date", { ascending: true });
 
-    setLoading(false);
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error(error);
+      if (userError || !user) {
+        setAppointments([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("customer_id", customerId)
+        .eq("user_id", user.id)
+        .order("appointment_date", { ascending: true });
+
+      if (error) {
+        console.error("Error loading appointments:", error);
+        setAppointments([]);
+        return;
+      }
+
+      setAppointments(data ?? []);
+    } catch (error) {
+      console.error("Unexpected error loading appointments:", error);
       setAppointments([]);
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setAppointments(data ?? []);
   };
 
   useEffect(() => {
@@ -146,8 +162,11 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
   };
 
   // Add handler for status update from the list
-  const handleUpdateAppointmentStatus = async (id: string, newStatus: string) => {
-    const appt = appointments.find(a => a.id === id);
+  const handleUpdateAppointmentStatus = async (
+    id: string,
+    newStatus: string,
+  ) => {
+    const appt = appointments.find((a) => a.id === id);
     if (!appt || appt.status === newStatus) return;
 
     const { error } = await supabase
@@ -189,8 +208,10 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
             onChange={(e) => setAppointmentStatus(e.target.value)}
             className="w-full border border-indigo-200 bg-white py-3 px-4 rounded-lg focus:border-indigo-400 transition"
           >
-            {STATUS_OPTIONS.map(status => (
-              <option key={status} value={status}>{status}</option>
+            {STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
             ))}
           </select>
         </div>
@@ -217,9 +238,13 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
 
       <div>
         {loading ? (
-          <div className="py-8 text-center text-indigo-400 font-medium">Loading appointments...</div>
+          <div className="py-8 text-center text-indigo-400 font-medium">
+            Loading appointments...
+          </div>
         ) : appointments.length === 0 ? (
-          <div className="py-8 text-center text-indigo-400 font-medium">No appointments yet.</div>
+          <div className="py-8 text-center text-indigo-400 font-medium">
+            No appointments yet.
+          </div>
         ) : (
           <ul className="flex flex-col gap-5">
             {appointments.map((appt) => (
@@ -243,12 +268,16 @@ export default function AppointmentsSection({ customerId }: AppointmentsSectionP
                     </span>
                     <select
                       value={appt.status}
-                      onChange={(e) => handleUpdateAppointmentStatus(appt.id, e.target.value)}
+                      onChange={(e) =>
+                        handleUpdateAppointmentStatus(appt.id, e.target.value)
+                      }
                       className="ml-2 border border-indigo-200 rounded px-2 py-1 text-xs"
                       style={{ minWidth: 120 }}
                     >
-                      {STATUS_OPTIONS.map(status => (
-                        <option key={status} value={status}>{status}</option>
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
                       ))}
                     </select>
                   </div>
