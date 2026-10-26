@@ -88,7 +88,7 @@ export default function PricingPage() {
               </p>
 
               <Link
-                href={`/signup?plan=${plan.plan}`}
+                href={`/register?plan=${plan.plan}`}
                 className={`mt-8 flex w-full items-center justify-center rounded-xl px-5 py-3 font-semibold transition ${
                   plan.featured
                     ? "bg-blue-600 text-white hover:bg-blue-500"
@@ -142,7 +142,7 @@ export default function PricingPage() {
             </div>
 
             <Link
-              href="/signup?plan=early-access"
+              href="/register?plan=early-access"
               className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-6 py-3 font-semibold text-white transition hover:bg-emerald-400"
             >
               Apply for early access

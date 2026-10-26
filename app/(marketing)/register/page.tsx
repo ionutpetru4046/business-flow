@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { HiOutlineMail, HiOutlineLockClosed, HiOutlineUser } from "react-icons/hi";
+import { Suspense, useState } from "react";
+import type { FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { HiOutlineMail, HiOutlineLockClosed } from "react-icons/hi";
+import { supabase } from "@/lib/supabase";
 
-export default function RegisterPage() {
+const validPlans = ["starter", "business", "early-access"] as const;
+type Plan = (typeof validPlans)[number];
+
+function RegisterForm() {
+  const searchParams = useSearchParams();
+
+  const requestedPlan = searchParams.get("plan");
+  const selectedPlan: Plan =
+    validPlans.find((plan) => plan === requestedPlan) ?? "starter";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,55 +24,60 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
     setSuccessMessage(null);
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
+        options: {
+          data: { plan: selectedPlan },
+        },
       });
 
       if (error) {
         setFormError(error.message);
-        setLoading(false);
         return;
       }
 
-      // Optionally, check if confirmation email sent (Supabase often requires confirmation)
       setSuccessMessage(
-        "Account created! Please check your inbox to confirm your registration."
+        "Account created! Please check your inbox to confirm your registration.",
       );
       setEmail("");
       setPassword("");
-      // Optionally, redirect after timeout
-      // setTimeout(() => router.replace("/login"), 3000);
-    } catch (error: any) {
-      setFormError("Something went wrong");
+    } catch (error: unknown) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-gray-100 via-white to-indigo-50">
-      <div className="bg-white shadow-lg rounded-xl px-10 py-10 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-8 text-indigo-700 tracking-tight">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 via-white to-indigo-50 px-4">
+      <div className="w-full max-w-md rounded-xl bg-white px-10 py-10 shadow-lg">
+        <h1 className="mb-8 text-center text-3xl font-bold tracking-tight text-indigo-700">
           Create your account
         </h1>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6"
-          autoComplete="off"
-        >
+
+        <p className="mb-6 text-center text-sm text-gray-500">
+          Selected plan:{" "}
+          <span className="font-semibold capitalize text-indigo-600">
+            {selectedPlan.replace("-", " ")}
+          </span>
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
           <div>
             <label
-              className="block mb-1 text-sm text-gray-700 font-medium"
+              className="mb-1 block text-sm font-medium text-gray-700"
               htmlFor="email"
             >
               Email
@@ -73,19 +88,21 @@ export default function RegisterPage() {
               </span>
               <input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full border border-gray-300 py-3 pl-11 pr-3 rounded-lg focus:outline-none focus:border-indigo-500 transition"
+                className="w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 transition focus:border-indigo-500 focus:outline-none"
               />
             </div>
           </div>
+
           <div>
             <label
-              className="block mb-1 text-sm text-gray-700 font-medium"
+              className="mb-1 block text-sm font-medium text-gray-700"
               htmlFor="password"
             >
               Password
@@ -96,57 +113,81 @@ export default function RegisterPage() {
               </span>
               <input
                 id="password"
+                name="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 placeholder="Choose a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                autoComplete="new-password"
                 minLength={6}
-                className="w-full border border-gray-300 py-3 pl-11 pr-10 rounded-lg focus:outline-none focus:border-indigo-500 transition"
+                className="w-full rounded-lg border border-gray-300 py-3 pl-11 pr-10 transition focus:border-indigo-500 focus:outline-none"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 focus:outline-none"
-                tabIndex={-1}
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 focus:outline-none"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1 ml-1">
+            <p className="ml-1 mt-1 text-xs text-gray-400">
               Password must be at least 6 characters.
             </p>
           </div>
+
           {formError && (
-            <div className="bg-red-50 text-red-600 rounded-lg px-4 py-2 text-sm text-center">
+            <div
+              className="rounded-lg bg-red-50 px-4 py-2 text-center text-sm text-red-600"
+              role="alert"
+            >
               {formError}
             </div>
           )}
+
           {successMessage && (
-            <div className="bg-green-50 text-green-700 rounded-lg px-4 py-2 text-sm text-center">
+            <div
+              className="rounded-lg bg-green-50 px-4 py-2 text-center text-sm text-green-700"
+              role="status"
+            >
               {successMessage}
             </div>
           )}
+
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 cursor-pointer text-white font-semibold py-3 rounded-lg transition disabled:bg-indigo-300"
             disabled={loading}
+            className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
           >
             {loading ? "Signing up..." : "Sign Up"}
           </button>
         </form>
-        <p className="mt-6 text-center text-gray-500 text-sm">
+
+        <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-indigo-600 hover:underline font-medium"
+            className="font-medium text-indigo-600 hover:underline"
           >
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Loading registration...
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }
