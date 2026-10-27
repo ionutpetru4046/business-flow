@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import CheckoutButton from "@/app/components/CheckoutButton";
 
 const plans = [
   {
@@ -14,7 +15,7 @@ const plans = [
       "Customer activity history",
     ],
     cta: "Start with Starter",
-    plan: "starter",
+    plan: "starter" as const,
     featured: false,
   },
   {
@@ -29,7 +30,7 @@ const plans = [
       "Business performance reports",
     ],
     cta: "Choose Business",
-    plan: "business",
+    plan: "business" as const,
     featured: true,
   },
 ];
@@ -48,8 +49,8 @@ export default function PricingPage() {
           </h1>
 
           <p className="mt-5 text-lg text-slate-700">
-            Keep track of customers, manage follow-ups and bring more
-            customers back to your garage.
+            Keep track of customers, manage follow-ups and bring more customers
+            back to your garage.
           </p>
 
           <p className="mt-4 text-sm text-slate-500">
@@ -61,7 +62,7 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <section
               key={plan.plan}
-              className={`relative rounded-2xl border p-7 sm:p-9 transition ${
+              className={`relative rounded-2xl border p-7 transition sm:p-9 ${
                 plan.featured
                   ? "border-blue-500 bg-blue-50/80 shadow-xl shadow-blue-100/60"
                   : "border-slate-200 bg-white"
@@ -73,13 +74,18 @@ export default function PricingPage() {
                 </span>
               )}
 
-              <h2 className="mt-4 text-2xl font-semibold text-slate-900">{plan.name}</h2>
+              <h2 className="mt-4 text-2xl font-semibold text-slate-900">
+                {plan.name}
+              </h2>
+
               <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">
                 {plan.description}
               </p>
 
               <div className="mt-6 flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-slate-900">€{plan.price}</span>
+                <span className="text-5xl font-bold text-slate-900">
+                  €{plan.price}
+                </span>
                 <span className="text-slate-600">/ month</span>
               </div>
 
@@ -87,16 +93,11 @@ export default function PricingPage() {
                 Cancel anytime. Taxes may apply.
               </p>
 
-              <Link
-                href={`/register?plan=${plan.plan}`}
-                className={`mt-8 flex w-full items-center justify-center rounded-xl px-5 py-3 font-semibold transition ${
-                  plan.featured
-                    ? "bg-blue-600 text-white hover:bg-blue-500"
-                    : "border border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                {plan.cta}
-              </Link>
+              <CheckoutButton
+                plan={plan.plan}
+                label={plan.cta}
+                featured={plan.featured}
+              />
 
               <div className="my-8 border-t border-slate-200" />
 
@@ -127,14 +128,17 @@ export default function PricingPage() {
               <p className="text-sm font-semibold text-emerald-600">
                 Limited early access
               </p>
+
               <h2 className="mt-2 text-2xl font-bold text-slate-900">
                 Help shape BusinessFlow
               </h2>
+
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Join our first group of independent garages. Get access
-                to Business features for €19/month in exchange for
-                honest feedback and product testing.
+                Join our first group of independent garages. Get access to
+                Business features for €19/month in exchange for honest feedback
+                and product testing.
               </p>
+
               <p className="mt-3 text-xs text-slate-400">
                 Proposed offer for the first 10 garages. Confirm availability
                 and terms before publishing.

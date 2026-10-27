@@ -28,7 +28,12 @@ type UpcomingAppointment = {
   customers: { name: string } | null;
 };
 
-const STATUS_LABELS = ["Scheduled", "In Progress", "Completed", "Cancelled"] as const;
+const STATUS_LABELS = [
+  "Scheduled",
+  "In Progress",
+  "Completed",
+  "Cancelled",
+] as const;
 
 const STATUS_COLORS: Record<string, string> = {
   Scheduled: "bg-blue-200/70 text-blue-700 border-blue-200/50",
@@ -46,78 +51,135 @@ export default function DashboardPage() {
     totalVehicles: 0,
     appointmentsByStatus: {},
   });
-  const [upcomingAppointments, setUpcomingAppointments] = useState<UpcomingAppointment[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<
+    UpcomingAppointment[]
+  >([]);
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadDashboard = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        // 1. Verify that the user is authenticated.
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.replace("/login");
-        return;
+        if (cancelled) return;
+
+        if (authError || !user) {
+          router.replace("/login");
+          return;
+        }
+
+        
+        // 2. Verify the user's subscription before loading dashboard data.
+        const { data: subscription, error: subscriptionError } = await supabase
+          .from("subscriptions")
+          .select("status")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        console.log("[Dashboard] User ID:", user.id);
+        console.log("[Dashboard] Subscription result:", subscription);
+        console.log(
+          "[Dashboard] Subscription query error:",
+          subscriptionError
+        );
+        
+        if (cancelled) return;
+
+        const hasActiveSubscription =
+          !subscriptionError &&
+          (subscription?.status === "active" ||
+            subscription?.status === "trialing");
+
+        if (!hasActiveSubscription) {
+          console.log("[Dashboard] Redirecting to pricing:", {
+            hasSubscription: Boolean(subscription),
+            status: subscription?.status ?? null,
+            error: subscriptionError?.message ?? null,
+          });
+
+          router.replace("/pricing");
+          return;
+        }
+
+
+        // 4. Only load dashboard information after subscription verification.
+        setUserEmail(user.email || "");
+
+        const [
+          customersResult,
+          appointmentsResult,
+          vehiclesResult,
+          upcomingResult,
+        ] = await Promise.all([
+          supabase
+            .from("customers")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id),
+
+          supabase.from("appointments").select("status").eq("user_id", user.id),
+
+          supabase
+            .from("vehicles")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id),
+
+          supabase
+            .from("appointments")
+            .select("id, title, appointment_date, status, customers(name)")
+            .eq("user_id", user.id)
+            .gte("appointment_date", new Date().toISOString())
+            .neq("status", "Cancelled")
+            .order("appointment_date", { ascending: true })
+            .limit(5),
+        ]);
+
+        if (cancelled) return;
+
+        const appointmentsByStatus: Record<string, number> = {};
+
+        for (const label of STATUS_LABELS) {
+          appointmentsByStatus[label] = 0;
+        }
+
+        for (const row of appointmentsResult.data ?? []) {
+          const status = row.status ?? "Scheduled";
+          appointmentsByStatus[status] =
+            (appointmentsByStatus[status] ?? 0) + 1;
+        }
+
+        setStats({
+          totalCustomers: customersResult.count ?? 0,
+          totalAppointments: appointmentsResult.data?.length ?? 0,
+          totalVehicles: vehiclesResult.count ?? 0,
+          appointmentsByStatus,
+        });
+
+        setUpcomingAppointments(
+          (upcomingResult.data as UpcomingAppointment[] | null) ?? [],
+        );
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Dashboard access check failed:", error);
+
+        if (!cancelled) {
+          // Fail closed: do not display the dashboard if verification fails.
+          router.replace("/pricing");
+        }
       }
-
-      setUserEmail(user.email || "");
-
-      
-const [
-  customersResult,
-  appointmentsResult,
-  vehiclesResult,
-  upcomingResult,
-] = await Promise.all([
-  supabase
-    .from("customers")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id),
-
-  supabase
-    .from("appointments")
-    .select("status")
-    .eq("user_id", user.id),
-
-  supabase
-    .from("vehicles")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id),
-
-  supabase
-    .from("appointments")
-    .select("id, title, appointment_date, status, customers(name)")
-    .eq("user_id", user.id)
-    .gte("appointment_date", new Date().toISOString())
-    .neq("status", "Cancelled")
-    .order("appointment_date", { ascending: true })
-    .limit(5),
-]);
-
-
-      const appointmentsByStatus: Record<string, number> = {};
-      for (const label of STATUS_LABELS) {
-        appointmentsByStatus[label] = 0;
-      }
-      for (const row of appointmentsResult.data ?? []) {
-        const status = row.status ?? "Scheduled";
-        appointmentsByStatus[status] = (appointmentsByStatus[status] ?? 0) + 1;
-      }
-
-      setStats({
-        totalCustomers: customersResult.count ?? 0,
-        totalAppointments: appointmentsResult.data?.length ?? 0,
-        totalVehicles: vehiclesResult.count ?? 0,
-        appointmentsByStatus,
-      });
-
-      setUpcomingAppointments(
-        (upcomingResult.data as UpcomingAppointment[] | null) ?? []
-      );
-      setLoading(false);
     };
 
-    loadDashboard();
+    void loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const handleLogout = async () => {
@@ -130,7 +192,9 @@ const [
       <main className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-blue-300 via-white to-pink-200">
         <div className="bg-white/60 backdrop-blur-3xl shadow-2xl rounded-3xl px-10 py-14 max-w-xs sm:max-w-md flex flex-col items-center">
           <div className="animate-spin w-16 h-16 rounded-full border-4 border-indigo-300 border-b-transparent mb-7" />
-          <p className="text-xl text-gray-600 font-semibold tracking-tight">Loading Dashboard...</p>
+          <p className="text-xl text-gray-600 font-semibold tracking-tight">
+            Loading Dashboard...
+          </p>
         </div>
       </main>
     );
@@ -145,8 +209,12 @@ const [
             <HiOutlineUser size={34} className="text-indigo-600" />
           </span>
           <div>
-            <p className="font-bold text-indigo-800 text-base sm:text-lg leading-5">Welcome,</p>
-            <span className="text-sm sm:text-base text-gray-500">{userEmail}</span>
+            <p className="font-bold text-indigo-800 text-base sm:text-lg leading-5">
+              Welcome,
+            </p>
+            <span className="text-sm sm:text-base text-gray-500">
+              {userEmail}
+            </span>
           </div>
         </div>
         <button
@@ -177,8 +245,12 @@ const [
               <HiOutlineUserGroup className="text-3xl md:text-4xl text-indigo-700 group-hover:scale-125 group-hover:text-indigo-900 transition" />
             </div>
             <div className="text-center">
-              <p className="text-sm md:text-base font-semibold text-indigo-500 mb-1">Total Customers</p>
-              <p className="text-3xl md:text-4xl font-extrabold text-indigo-900 drop-shadow-sm tracking-wider">{stats.totalCustomers}</p>
+              <p className="text-sm md:text-base font-semibold text-indigo-500 mb-1">
+                Total Customers
+              </p>
+              <p className="text-3xl md:text-4xl font-extrabold text-indigo-900 drop-shadow-sm tracking-wider">
+                {stats.totalCustomers}
+              </p>
             </div>
           </div>
           {/* Appointments */}
@@ -187,8 +259,12 @@ const [
               <HiOutlineCalendar className="text-3xl md:text-4xl text-blue-700 group-hover:scale-125 group-hover:text-blue-900 transition" />
             </div>
             <div className="text-center">
-              <p className="text-sm md:text-base font-semibold text-blue-500 mb-1">Total Appointments</p>
-              <p className="text-3xl md:text-4xl font-extrabold text-blue-900 drop-shadow-sm tracking-wider">{stats.totalAppointments}</p>
+              <p className="text-sm md:text-base font-semibold text-blue-500 mb-1">
+                Total Appointments
+              </p>
+              <p className="text-3xl md:text-4xl font-extrabold text-blue-900 drop-shadow-sm tracking-wider">
+                {stats.totalAppointments}
+              </p>
             </div>
           </div>
           {/* Vehicles */}
@@ -197,8 +273,12 @@ const [
               <HiOutlineTruck className="text-3xl md:text-4xl text-emerald-700 group-hover:scale-125 group-hover:text-emerald-900 transition" />
             </div>
             <div className="text-center">
-              <p className="text-sm md:text-base font-semibold text-emerald-500 mb-1">Total Vehicles</p>
-              <p className="text-3xl md:text-4xl font-extrabold text-emerald-900 drop-shadow-sm tracking-wider">{stats.totalVehicles}</p>
+              <p className="text-sm md:text-base font-semibold text-emerald-500 mb-1">
+                Total Vehicles
+              </p>
+              <p className="text-3xl md:text-4xl font-extrabold text-emerald-900 drop-shadow-sm tracking-wider">
+                {stats.totalVehicles}
+              </p>
             </div>
           </div>
         </div>
@@ -253,7 +333,9 @@ const [
                     style={{ animationDelay: `${i * 75}ms` }}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-indigo-900 text-base sm:text-lg truncate">{app.title}</p>
+                      <p className="font-semibold text-indigo-900 text-base sm:text-lg truncate">
+                        {app.title}
+                      </p>
                       <span
                         className={`px-3 py-0.5 rounded-full text-xs sm:text-sm font-semibold border bg-opacity-80 ${STATUS_COLORS[app.status] ?? STATUS_COLORS.Scheduled} shadow`}
                       >
@@ -295,11 +377,17 @@ const [
       </footer>
       <style jsx global>{`
         @keyframes fadein {
-          from { opacity:0; transform: translateY(24px);}
-          to { opacity:1; transform: translateY(0);}
+          from {
+            opacity: 0;
+            transform: translateY(24px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .animate-fadein {
-          animation: fadein 0.7s cubic-bezier(.61,1,.88,1) both;
+          animation: fadein 0.7s cubic-bezier(0.61, 1, 0.88, 1) both;
         }
       `}</style>
     </main>
