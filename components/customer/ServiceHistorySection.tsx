@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +9,7 @@ import {
   HiOutlinePencilSquare,
 } from "react-icons/hi2";
 
-import { ServiceRecord } from "@/types/customer";
+import { ServiceRecord, Vehicle } from "@/types/customer";
 
 type Props = {
   customerId: string;
@@ -23,6 +23,7 @@ export default function ServiceHistorySection({ customerId }: Props) {
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [vehicle, setVehicle] = useState("");
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [cost, setCost] = useState("");
@@ -35,9 +36,19 @@ export default function ServiceHistorySection({ customerId }: Props) {
     setError(null);
     const { data, error } = await supabase
       .from("service_history")
-      .select("*")
-      .eq("customer_id", customerId)
-      .order("date", { ascending: false });
+      .select(
+        `
+    *,
+    vehicles!inner (
+      customer_id,
+      make,
+      model,
+      registration
+    )
+  `,
+      )
+      .eq("vehicles.customer_id", customerId)
+      .order("service_date", { ascending: false });
 
     if (error) {
       setError("Failed to load service history.");
@@ -125,7 +136,7 @@ export default function ServiceHistorySection({ customerId }: Props) {
     setCost(
       typeof entry.cost === "number" && !isNaN(entry.cost)
         ? entry.cost.toString()
-        : ""
+        : "",
     );
   }
 
@@ -237,8 +248,7 @@ export default function ServiceHistorySection({ customerId }: Props) {
                   <div className="text-xs text-gray-700 mb-0.5">
                     Cost:{" "}
                     <span className="font-semibold">
-                      {typeof entry.cost === "number" &&
-                      !isNaN(entry.cost)
+                      {typeof entry.cost === "number" && !isNaN(entry.cost)
                         ? `$${entry.cost.toFixed(2)}`
                         : "-"}
                     </span>
