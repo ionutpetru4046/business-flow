@@ -15,7 +15,11 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
 ];
 
-export default function Navbar() {
+type NavbarProps = {
+  isAuthenticated: boolean;
+};
+
+export default function Navbar({ isAuthenticated }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 

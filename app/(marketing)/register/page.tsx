@@ -95,7 +95,7 @@ function RegisterForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 transition focus:border-indigo-500 focus:outline-none"
+                className="w-full text-black rounded-lg border border-gray-300 py-3 pl-11 pr-3 transition focus:border-indigo-500 focus:outline-none"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ function RegisterForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-gray-300 py-3 pl-11 pr-10 transition focus:border-indigo-500 focus:outline-none"
+                className="w-full text-black rounded-lg border border-gray-300 py-3 pl-11 pr-3 transition focus:border-indigo-500 focus:outline-none"
               />
               <button
                 type="button"

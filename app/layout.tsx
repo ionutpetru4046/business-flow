@@ -71,7 +71,7 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased font-sans`}
     >
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
-        <Navbar />
+        <Navbar isAuthenticated={false} />
         <main className="flex-grow">{children}</main>
         <Footer />
       </body>
