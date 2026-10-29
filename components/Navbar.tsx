@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { HiOutlineMenuAlt3 } from "react-icons/hi";
 import { IoClose } from "react-icons/io5";
@@ -21,10 +21,14 @@ type NavbarProps = {
 
 export default function Navbar({ isAuthenticated }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  
   const pathname = usePathname();
 
-  const closeMenu = () => setMobileOpen(false);
-
+const closeMenu = () => {
+  menuButtonRef.current?.focus();
+  setMobileOpen(false);
+};
   useEffect(() => {
     if (!mobileOpen) return;
 
@@ -104,6 +108,7 @@ export default function Navbar({ isAuthenticated }: NavbarProps) {
 
         {/* Mobile menu toggle */}
         <button
+          ref={menuButtonRef}
           type="button"
           onClick={() => setMobileOpen((open) => !open)}
           className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden"
@@ -135,6 +140,7 @@ export default function Navbar({ isAuthenticated }: NavbarProps) {
         id="mobile-navigation"
         aria-label="Mobile navigation"
         aria-hidden={!mobileOpen}
+        inert={!mobileOpen}
         className={`fixed right-0 top-0 z-50 flex h-dvh w-[min(85vw,360px)] flex-col border-l border-slate-200 bg-white px-5 pb-6 pt-5 shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
